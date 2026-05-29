@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarCalc - SDG 7 & HPA Lab Dashboard</title>
+    
+    <!-- Meta SEO -->
+    <meta name="description" content="SolarCalc - Aplikasi web interaktif untuk estimasi penghematan energi surya (SDG 7) dan dashboard monitoring visualisasi Horizontal Pod Autoscaler (HPA) Lab.">
+    <meta name="keywords" content="SolarCalc, SDG 7, Energi Bersih, Panel Surya, Kalkulator Mandiri, HPA, Auto-scaling, Kubernetes, Monitoring, Dark Mode">
+    <meta name="author" content="Antigravity AI">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS RESET & VARIABLES */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            /* Theme Colors (Modern Dark Slate) */
+            --bg-base: #080B11;
+            --bg-surface: #0E1321;
+            --bg-surface-elevated: #161D30;
+            --bg-glass: rgba(14, 19, 33, 0.7);
+            
+            --border-light: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(57, 255, 20, 0.2);
+            
+            /* Accent Colors */
+            --color-primary: #10B981; /* Emerald/Solar Eco Green */
+            --color-primary-glow: rgba(16, 185, 129, 0.3);
+            
+            --color-solar: #F59E0B; /* Amber/Solar Orange-Yellow */
+            --color-solar-glow: rgba(245, 158, 11, 0.3);
+            
+            --color-neon-green: #39FF14; /* Neon Green */
+            --color-neon-green-glow: rgba(57, 255, 20, 0.4);
+            
+            --color-neon-blue: #00F0FF; /* Neon Blue */
+            --color-neon-blue-glow: rgba(0, 240, 255, 0.4);
+            
+            --color-danger: #EF4444;
+            --color-warning: #F59E0B;
+            
+            /* Text Colors */
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --text-dark: #4B5563;
+            
+            /* Core UI transitions */
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-neon: 0 0 20px rgba(57, 255, 20, 0.25);
+            --shadow-solar: 0 0 20px rgba(245, 158, 11, 0.2);
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(0, 240, 255, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.02) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* CUSTOM SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-surface-elevated);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dark);
+        }
+
+        /* APP LAYOUT */
+        .app-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* SIDEBAR NAV */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-light);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+            padding-left: 0.5rem;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--color-solar), var(--color-primary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-solar);
+        }
+
+        .brand-logo svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+
+        .brand-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #FFF, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            border: 1px solid transparent;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .nav-item:hover {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-item.active {
+            color: var(--text-main);
+            background-color: var(--bg-surface-elevated);
+            border: 1px solid var(--border-light);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Accent badges for active items depending on tab */
+        .nav-item.active.tab-main-active {
+            border-left: 3px solid var(--color-solar);
+        }
+
+        .nav-item.active.tab-hpa-active {
+            border-left: 3px solid var(--color-neon-green);
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid var(--border-light);
+            padding-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .sdg-tag {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--color-primary);
+            font-weight: 600;
+            width: fit-content;
+        }
+
+        .sdg-badge-num {
+            background-color: var(--color-primary);
+            color: var(--bg-base);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 800;
+        }
+
+        /* MAIN CONTENT AREA */
+        .main-content {
+            margin-left: 280px;
+            padding: 2.5rem;
+            width: calc(100% - 280px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* APP HEADER */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-title h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            background: var(--bg-surface);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            border: 1px solid var(--border-light);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-dark);
+            box-shadow: 0 0 8px var(--text-dark);
+            transition: var(--transition-smooth);
+        }
+
+        .status-dot.active {
+            background-color: var(--color-primary);
+            box-shadow: 0 0 8px var(--color-primary);
+            animation: pulse-dot 2s infinite;
+        }
+
+        .status-dot.simulating {
+            background-color: var(--color-warning);
+            box-shadow: 0 0 8px var(--color-warning);
+            animation: pulse-dot-warning 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulse-dot-warning {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        /* TAB PAGES */
+        .tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 2rem;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .tab-panel.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* GRID SYSTEM */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2rem;
+        }
+
+        .grid-3col {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* CARD STYLE */
+        .card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: 18px;
+            padding: 1.75rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--color-primary);
+        }
+
+        /* TAB 1: SOLAR CALCULATOR SPECIFIC STYLES */
+        .calculator-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-label-container {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .input-label {
+            color: var(--text-main);
+        }
+
+        .input-value-preview {
+            color: var(--color-solar);
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 99px;
+            background: var(--bg-surface-elevated);
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--color-solar);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            transition: var(--transition-smooth);
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.8);
+        }
+
+        .select-input {
+            width: 100%;
+            background-color: var(--bg-surface-elevated);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .select-input:focus {
+            border-color: var(--color-solar);
+        }
+
+        /* RESULT DISPLAY */
+        .result-panel {
+            background: linear-gradient(135deg, rgba(22, 29, 48, 0.9) 0%, rgba(14, 19, 33, 0.95) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            box-shadow: var(--shadow-solar);
+        }
+
+        .result-title {
+            color: var(--color-solar);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .result-card.span-2 {
+            grid-column: span 2;
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent);
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-val {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .result-val.highlight {
+            color: var(--color-solar);
+            font-size: 1.6rem;
+        }
+
+        .result-val.green {
+            color: var(--color-primary);
+        }
+
+        .impact-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .impact-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-primary);
+        }
+
+        .impact-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .impact-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.2;
+        }
+
+        .impact-highlight {
+            color: var(--color-primary);
+            font-weight: 700;
+        }
+
+        /* EDUCATION AREA */
+        .edu-hero {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(8, 11, 17, 0.9) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 18px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .edu-hero-text {
+            flex: 1;
+        }
+
+        .edu-badge {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: var(--color-primary);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            width: fit-content;
+            margin-bottom: 0.75rem;
+        }
+
+        .edu-hero h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .edu-hero p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .edu-icon-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-primary);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.1);
+        }
+
+        .edu-icon-container svg {
+            width: 44px;
+            height: 44px;
+            fill: currentColor;
+        }
+
+        .edu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+
+        .edu-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: var(--transition-smooth);
+        }
+
+        .edu-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(16, 185, 129, 0.25);
+        }
+
+        .edu-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-primary);
+        }
+
+        .edu-card-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .edu-card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .edu-card-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* TAB 2: HPA LAB (DARK/NEON GREEN ACCENTS) */
+        .hpa-title {
+            color: var(--color-neon-green);
+        }
+
+        .panel-desc-bar {
+            background: rgba(57, 255, 20, 0.05);
+            border: 1px solid rgba(57, 255, 20, 0.15);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .panel-desc-text strong {
+            color: var(--color-neon-green);
+        }
+
+        .btn-simulate {
+            background: var(--bg-base);
+            border: 2px solid var(--color-neon-green);
+            color: var(--color-neon-green);
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.1);
+        }
+
+        .btn-simulate:hover {
+            background: var(--color-neon-green);
+            color: var(--bg-base);
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+            transform: scale(1.02);
+        }
+
+        .btn-simulate:active {
+            transform: scale(0.98);
+        }
+
+        .btn-simulate.active {
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-simulate.active:hover {
+            background: var(--color-danger);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .metric-glow-card {
+            border: 1px solid rgba(57, 255, 20, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .metric-glow-card:hover {
+            border-color: rgba(57, 255, 20, 0.25);
+        }
+
+        /* Large Active Pod Indicator */
+        .pod-large-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .pod-large-num {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--color-neon-green);
+            line-height: 1;
+            text-shadow: 0 0 25px rgba(57, 255, 20, 0.6);
+            transition: var(--transition-smooth);
+        }
+
+        .pod-status-sub {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            text-align: right;
+        }
+
+        .hpa-status-badge {
+            background: rgba(57, 255, 20, 0.1);
+            border: 1px solid rgba(57, 255, 20, 0.2);
+            color: var(--color-neon-green);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            width: fit-content;
+            align-self: flex-end;
+            text-transform: uppercase;
+        }
+
+        .hpa-status-badge.scaling {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.2);
+            color: var(--color-solar);
+            animation: blink 1s infinite alternate;
+        }
+
+        @keyframes blink {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+
+        .pod-count-detail {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* POD TRACKER CARD */
+        .pod-tracker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            min-height: 100px;
+        }
+
+        .pod-item {
+            background-color: var(--bg-surface-elevated);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            animation: podSpawn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transition: var(--transition-smooth);
+        }
+
+        @keyframes podSpawn {
+            from { opacity: 0; transform: scale(0.85); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .pod-item.terminating {
+            animation: podDespawn 0.5s ease-in forwards;
+        }
+
+        @keyframes podDespawn {
+            to { opacity: 0; transform: scale(0.8); background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+        }
+
+        .pod-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pod-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .pod-status-dot.running {
+            background-color: var(--color-neon-green);
+            box-shadow: 0 0 8px var(--color-neon-green);
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        .pod-status-dot.pending {
+            background-color: var(--color-solar);
+            box-shadow: 0 0 8px var(--color-solar);
+            animation: blink 0.6s infinite alternate;
+        }
+
+        .pod-status-dot.terminating {
+            background-color: var(--color-danger);
+            box-shadow: 0 0 8px var(--color-danger);
+        }
+
+        .pod-name {
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pod-cpu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-top: 0.25rem;
+        }
+
+        .pod-cpu-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .pod-cpu-bar-bg {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .pod-cpu-bar-fill {
+            height: 100%;
+            background-color: var(--color-neon-green);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.8s ease-in-out;
+        }
+
+        .pod-cpu-bar-fill.warning {
+            background-color: var(--color-warning);
+        }
+
+        .pod-cpu-bar-fill.danger {
+            background-color: var(--color-danger);
+        }
+
+        /* TIMELINE/CHARTS */
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .chart-box {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 1.25rem;
+            position: relative;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .chart-title-sub {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-indicator {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .chart-indicator.blue {
+            color: var(--color-neon-blue);
+        }
+
+        .chart-indicator.green {
+            color: var(--color-neon-green);
+        }
+
+        .chart-canvas-wrapper {
+            width: 100%;
+            height: 180px;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 1024px) {
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1.25rem;
+                border-right: none;
+                border-bottom: 1px solid var(--border-light);
+            }
+
+            .sidebar-brand {
+                margin-bottom: 1.5rem;
+            }
+
+            .nav-menu {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+            }
+
+            .nav-item {
+                padding: 0.75rem 1rem;
+                white-space: nowrap;
+            }
+
+            .sidebar-footer {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 1.5rem;
+            }
+
+            .grid-3col {
+                grid-template-columns: 1fr;
+            }
+
+            .edu-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .edu-hero {
+                flex-direction: column;
+                gap: 1.25rem;
+                text-align: center;
+            }
+
+            .edu-icon-container {
+                margin: 0 auto;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-card.span-2 {
+                grid-column: span 1;
+            }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div>
+                <!-- Brand logo/name -->
+                <div class="sidebar-brand">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3zm0-10c.41 0 .75-.34.75-.75V3c0-.41-.34-.75-.75-.75s-.75.34-.75.75v1.25c0 .41.34.75.75.75zm0 14c-.41 0-.75.34-.75.75v1.25c0 .41.34.75.75.75s.75-.34.75-.75v-1.25c0-.41-.34-.75-.75-.75zm8.25-8.25c-.41 0-.75.34-.75.75V12c0 .41.34.75.75.75s.75-.34.75-.75v-1.25c0-.41-.34-.75-.75-.75zm-14.75.75c0-.41-.34-.75-.75-.75H3.5c-.41 0-.75.34-.75.75v1.25c0 .41.34.75.75.75h1.25c0-.41.34-.75.75-.75zm12.3-5.24a.749.749 0 0 0-.22-.53l-.88-.88a.749.749 0 0 0-1.06 0 .749.749 0 0 0 0 1.06l.88.88c.3.3.77.3 1.06 0a.755.755 0 0 0 .22-.53zm-11.62 11.62c-.15-.15-.34-.22-.53-.22s-.38.07-.53.22l-.88.88a.749.749 0 0 0 0 1.06.749.749 0 0 0 1.06 0l.88-.88c.3-.3.3-.77 0-1.06zm11.62.53c-.3-.3-.77-.3-1.06 0l-.88.88a.749.749 0 0 0 0 1.06c.3.3.77.3 1.06 0l.88-.88a.755.755 0 0 0 0-1.06zm-12.15-11.27a.749.749 0 0 0-1.06 0l-.88.88a.749.749 0 0 0 0 1.06.749.749 0 0 0 1.06 0l.88-.88c.29-.3.29-.76 0-1.06z"/>
+                        </svg>
+                    </div>
+                    <span class="brand-name">SolarCalc</span>
+                </div>
+
+                <!-- Nav list -->
+                <nav class="nav-menu">
+                    <div class="nav-item active tab-main-active" id="nav-main" onclick="switchTab('main')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                        </svg>
+                        Halaman Utama
+                    </div>
+                    <div class="nav-item" id="nav-hpa" onclick="switchTab('hpa')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+                        </svg>
+                        HPA Lab
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Sidebar footer -->
+            <div class="sidebar-footer">
+                <div class="sdg-tag">
+                    <span class="sdg-badge-num">SDG 7</span>
+                    Energi Bersih & Terjangkau
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-dark); text-align: center; font-weight: 500;">
+                    &copy; 2026 SolarCalc v1.0.0
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN MAIN MAIN -->
+        <main class="main-content">
+            
+            <!-- GLOBAL APP HEADER -->
+            <header class="app-header">
+                <div class="header-title">
+                    <h1 id="page-title">Halaman Utama</h1>
+                    <p id="page-subtitle">SDG 7: Solusi Transisi Energi Bersih Terjangkau</p>
+                </div>
+                <div class="header-status">
+                    <div class="status-dot active" id="header-status-dot"></div>
+                    <span id="system-status">Sistem Normal</span>
+                </div>
+            </header>
+
+            <!-- TAB 1: MAIN PAGE (SOLAR CALCULATOR & EDU) -->
+            <section class="tab-panel active" id="tab-main">
+                
+                <!-- Hero Educational Banner -->
+                <div class="edu-hero">
+                    <div class="edu-hero-text">
+                        <span class="edu-badge">Fakta SDG 7</span>
+                        <h2>Energi Bersih untuk Masa Depan</h2>
+                        <p>SDG 7 bertujuan memastikan akses ke energi yang terjangkau, andal, berkelanjutan, dan modern bagi semua. Pemasangan Pembangkit Listrik Tenaga Surya (PLTS) Atap secara lokal berkontribusi langsung pada pengurangan emisi karbon dan dekarbonisasi jaringan energi nasional.</p>
+                    </div>
+                    <div class="edu-icon-container">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49.01.01.01-.01z" fill-opacity=".3"/>
+                            <path d="M0 7.01l11.99 14.92L24 7.01C23.54 6.67 19.53 3.5 12 3.5S.46 6.67 0 7.01z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="grid-2col">
+                    
+                    <!-- Calculator Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title" style="color: var(--color-solar)">
+                                <svg viewBox="0 0 24 24" style="fill: var(--color-solar)">
+                                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 6H9V7h6v2zm0 4H9v-2h6v2zm0 4H9v-2h6v2z"/>
+                                </svg>
+                                Kalkulator Mandiri Solar Atap
+                            </h2>
+                        </div>
+                        <div class="calculator-container">
+                            
+                            <!-- Input 1: Tagihan bulanan -->
+                            <div class="input-group">
+                                <div class="input-label-container">
+                                    <span class="input-label">Estimasi Tagihan Listrik Bulanan</span>
+                                    <span class="input-value-preview" id="preview-bill">Rp 750.000</span>
+                                </div>
+                                <input type="range" class="range-slider" id="input-bill" min="200000" max="5000000" step="50000" value="750000">
+                            </div>
+
+                            <!-- Input 2: Daya rumah -->
+                            <div class="input-group">
+                                <div class="input-label-container">
+                                    <span class="input-label">Daya Listrik Terpasang (VA)</span>
+                                </div>
+                                <select class="select-input" id="input-capacity">
+                                    <option value="900" selected>900 VA (Tarif bersubsidi/non-subsidi)</option>
+                                    <option value="1300">1300 VA (Tarif R-1/TR Rp 1.444,70/kWh)</option>
+                                    <option value="2200">2200 VA (Tarif R-1/TR Rp 1.444,70/kWh)</option>
+                                    <option value="3500">3500 VA (Tarif R-2/TR Rp 1.699,53/kWh)</option>
+                                    <option value="4400">4400 VA (Tarif R-2/TR Rp 1.699,53/kWh)</option>
+                                    <option value="5500">5500 VA (Tarif R-2/TR Rp 1.699,53/kWh)</option>
+                                    <option value="6600">6600+ VA (Tarif R-3/TR Rp 1.699,53/kWh)</option>
+                                </select>
+                            </div>
+
+                            <!-- Input 3: Sun Hours -->
+                            <div class="input-group">
+                                <div class="input-label-container">
+                                    <span class="input-label">Rata-rata Penyinaran Matahari Efektif</span>
+                                    <span class="input-value-preview" id="preview-sun">4.0 Jam/Hari</span>
+                                </div>
+                                <input type="range" class="range-slider" id="input-sun" min="3.0" max="6.0" step="0.5" value="4.0">
+                            </div>
+
+                            <!-- Input 4: Target Offset -->
+                            <div class="input-group">
+                                <div class="input-label-container">
+                                    <span class="input-label">Target Kontribusi Energi Surya (Offset %)</span>
+                                    <span class="input-value-preview" id="preview-offset" style="color: var(--color-primary);">60%</span>
+                                </div>
+                                <input type="range" class="range-slider" id="input-offset" min="20" max="100" step="5" value="60" style="background: rgba(16, 185, 129, 0.1);">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Result Panel -->
+                    <div class="card result-panel">
+                        <div class="card-header">
+                            <h2 class="card-title result-title">
+                                <svg viewBox="0 0 24 24" style="fill: var(--color-solar)">
+                                    <path d="M11.5 2C6.81 2 3 5.81 3 10.5S6.81 19 11.5 19h.5v3c0 .83.67 1.5 1.5 1.5h2c.83 0 1.5-.67 1.5-1.5v-3c2.7-.8 4.7-3.23 4.97-6.22C21.8 6.55 17.5 2.1 12.28 2.01c-.26-.01-.52-.01-.78-.01zm-.5 14h-1v-2H9v-1h2v-2H9v-1h2V7H9V6h3c.55 0 1 .45 1 1v2h1v1h-2v2h2v1h-2v2h1c.55 0 1 .45 1 1v1c0 .55-.45 1-1 1z"/>
+                                </svg>
+                                Hasil Perhitungan Proyeksi
+                            </h2>
+                        </div>
+                        
+                        <div class="results-grid">
+                            <div class="result-card">
+                                <span class="result-label">Kapasitas PLTS</span>
+                                <span class="result-val highlight" id="calc-capacity">1.5 kWp</span>
+                            </div>
+                            <div class="result-card">
+                                <span class="result-label">Produksi Bulanan</span>
+                                <span class="result-val highlight" id="calc-generation" style="color: var(--color-primary)">180 kWh</span>
+                            </div>
+                            <div class="result-card span-2">
+                                <span class="result-label">Estimasi Penghematan Tagihan Bulanan</span>
+                                <span class="result-val highlight" id="calc-savings" style="color: #4ade80;">Rp 260.000 / bln</span>
+                            </div>
+                            <div class="result-card">
+                                <span class="result-label">Biaya Investasi Kasar</span>
+                                <span class="result-val" id="calc-cost">Rp 21.000.000</span>
+                            </div>
+                            <div class="result-card">
+                                <span class="result-label">Lama Balik Modal</span>
+                                <span class="result-val" id="calc-payback">6.7 Tahun</span>
+                            </div>
+                            
+                            <!-- Impact box -->
+                            <div class="result-card span-2" style="background: rgba(16, 185, 129, 0.03); border-color: rgba(16, 185, 129, 0.15)">
+                                <span class="result-label">Dampak Lingkungan (SDG 7 Target)</span>
+                                <div class="impact-indicator">
+                                    <div class="impact-icon">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="impact-text">
+                                        Mencegah pelepasan emisi karbon sebesar <span class="impact-highlight" id="calc-co2">1.820 kg CO₂</span> per tahun. Setara dengan menanam <span class="impact-highlight" id="calc-trees">91 Pohon</span> dewasa.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-simulate" id="btn-save-calc" style="border-color: var(--color-solar); color: var(--color-solar); margin-top: 1.25rem; width: 100%; justify-content: center; box-shadow: 0 0 10px rgba(245, 158, 11, 0.15); display: flex; align-items: center; gap: 0.5rem;">
+                            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">
+                                <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                            </svg>
+                            Simpan Hasil ke Database MySQL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Educational Grid -->
+                <div>
+                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">Mengapa Transisi ke PLTS Atap Sangat Krusial?</h3>
+                    <div class="edu-grid">
+                        <div class="edu-card">
+                            <div class="edu-card-icon" style="color: var(--color-solar)">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                                </svg>
+                            </div>
+                            <h4 class="edu-card-title">Menghemat Pengeluaran</h4>
+                            <p class="edu-card-desc">Dengan memanfaatkan energi matahari secara gratis, penghematan tagihan listrik PLN bulanan dapat mencapai hingga 80% dari konsumsi normal rumah Anda.</p>
+                        </div>
+                        <div class="edu-card">
+                            <div class="edu-card-icon" style="color: var(--color-primary)">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM13 16h-2v2h2v-2zm0-6h-2v4h2v-4z"/>
+                                </svg>
+                            </div>
+                            <h4 class="edu-card-title">Mendukung SDG Jangka Panjang</h4>
+                            <p class="edu-card-desc">Memasang solar panel membantu mewujudkan Target 7.2 SDG, yaitu meningkatkan pangsa energi terbarukan secara global secara signifikan sebelum tahun 2030.</p>
+                        </div>
+                        <div class="edu-card">
+                            <div class="edu-card-icon" style="color: var(--color-neon-blue)">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 10H11v6h2v-6zm0-4H11v2h2V8z"/>
+                                </svg>
+                            </div>
+                            <h4 class="edu-card-title">Ketahanan Energi Mandiri</h4>
+                            <p class="edu-card-desc">Instalasi panel surya (khususnya dengan baterai backup) meningkatkan keandalan energi rumah tangga dari ancaman blackout jaringan pusat.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Table Card -->
+                <div class="card" id="history-container" style="margin-top: 2.5rem;">
+                    <div class="card-header">
+                        <h2 class="card-title" style="color: var(--color-primary)">
+                            <svg viewBox="0 0 24 24" style="fill: var(--color-primary); margin-right: 8px; width: 20px; height: 20px;">
+                                <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.53.85-1.43-3.63-2.15V8h-1.5z"/>
+                            </svg>
+                            Riwayat Perhitungan Terakhir (MySQL Persisted)
+                        </h2>
+                        <span class="pod-count-detail" id="db-source-badge" style="font-family: monospace;">RAM Cache</span>
+                    </div>
+                    <div style="overflow-x: auto; width: 100%;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; color: var(--text-main);">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border-light); color: var(--text-muted); font-weight: 600;">
+                                    <th style="padding: 0.75rem 1rem;">Tanggal</th>
+                                    <th style="padding: 0.75rem 1rem;">Tagihan</th>
+                                    <th style="padding: 0.75rem 1rem;">Daya Rumah</th>
+                                    <th style="padding: 0.75rem 1rem;">Kapasitas PLTS</th>
+                                    <th style="padding: 0.75rem 1rem;">Produksi (kWh)</th>
+                                    <th style="padding: 0.75rem 1rem;">Penghematan</th>
+                                    <th style="padding: 0.75rem 1rem;">Balik Modal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr>
+                                    <td colspan="7" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Belum ada riwayat perhitungan. Masukkan data di atas dan klik Simpan.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- TAB 2: HPA LAB (AUTO-SCALING DASHBOARD) -->
+            <section class="tab-panel" id="tab-hpa">
+                
+                <!-- Description box & Action Button -->
+                <div class="panel-desc-bar">
+                    <div class="panel-desc-text" id="hpa-desc-text">
+                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; display: inline; vertical-align: middle; margin-right: 4px; fill: var(--color-neon-green);">
+                            <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                        </svg>
+                        <span id="hpa-info-label">Mode: Simulasi Frontend Statis (Tanpa Backend). Jalankan server backend untuk sinkronisasi cloud penuh!</span>
+                    </div>
+                    <button class="btn-simulate" id="btn-toggle-load">
+                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        <span id="btn-load-text">Simulasikan Load</span>
+                    </button>
+                </div>
+
+                <div class="grid-2col">
+                    
+                    <!-- Pod Active Indicator (Large metric card) -->
+                    <div class="card metric-glow-card">
+                        <div class="card-header" style="margin-bottom: 0.5rem;">
+                            <h2 class="card-title hpa-title">
+                                <svg viewBox="0 0 24 24" style="fill: var(--color-neon-green)">
+                                    <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0-2 .9-2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/>
+                                </svg>
+                                Indikator Pod Aktif
+                            </h2>
+                        </div>
+                        <div class="pod-large-indicator">
+                            <div class="pod-large-num" id="pod-count">2</div>
+                            <div class="pod-status-sub">
+                                <span class="hpa-status-badge" id="hpa-badge">Idle</span>
+                                <span class="pod-count-detail" id="pod-detail">2 Pod Sehat / Target 2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pod Tracker (Visual blocks of running pods) -->
+                    <div class="card metric-glow-card">
+                        <div class="card-header">
+                            <h2 class="card-title hpa-title">
+                                <svg viewBox="0 0 24 24" style="fill: var(--color-neon-green)">
+                                    <path d="M22 2H2v20h20V2zM20 20H4V4h16v16zm-5-8l-4 4-2-2h-3v-2h4l2 2 3-3h2v1z"/>
+                                </svg>
+                                Pod Tracker
+                            </h2>
+                            <span class="pod-count-detail" style="font-family: monospace;" id="pod-namespace">ns: default-local</span>
+                        </div>
+                        
+                        <!-- Visual list of pods -->
+                        <div class="pod-tracker-grid" id="pod-tracker-container">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts (Latency & Throughput side-by-side or stacked grid) -->
+                <div class="charts-container">
+                    
+                    <!-- Throughput (Req/s) -->
+                    <div class="chart-box metric-glow-card">
+                        <div class="chart-header">
+                            <span class="chart-title-sub">
+                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background-color: var(--color-neon-blue); box-shadow: 0 0 5px var(--color-neon-blue)"></span>
+                                Web Traffic / Throughput
+                            </span>
+                            <span class="chart-indicator blue" id="val-throughput">120 req/s</span>
+                        </div>
+                        <div class="chart-canvas-wrapper">
+                            <canvas id="chart-throughput"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Latency (ms) -->
+                    <div class="chart-box metric-glow-card">
+                        <div class="chart-header">
+                            <span class="chart-title-sub">
+                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background-color: var(--color-neon-green); box-shadow: 0 0 5px var(--color-neon-green)"></span>
+                                Waktu Respon / Latensi
+                            </span>
+                            <span class="chart-indicator green" id="val-latency">42 ms</span>
+                        </div>
+                        <div class="chart-canvas-wrapper">
+                            <canvas id="chart-latency"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+            
+        </main>
+    </div>
+
+    <!-- BUSINESS & CORE SCRIPT LAYER -->
+    <script>
+        // GLOBALS & STATE
+        let activeTab = 'main';
+        const BACKEND_URL = 'http://localhost:5000';
+        let useBackend = false;
+        let lastCalculationResult = null;
+        
+        // TAB SWITCHING FUNCTIONALITY
+        function switchTab(tabName) {
+            if (activeTab === tabName) return;
+            
+            // Remove active classes
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active', 'tab-main-active', 'tab-hpa-active');
+            });
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+
+            // Set new active classes
+            const activeNav = document.getElementById(`nav-${tabName}`);
+            const activePanel = document.getElementById(`tab-${tabName}`);
+            
+            activeNav.classList.add('active');
+            activeNav.classList.add(tabName === 'main' ? 'tab-main-active' : 'tab-hpa-active');
+            activePanel.classList.add('active');
+            
+            // Update Page Header texts
+            const pageTitle = document.getElementById('page-title');
+            const pageSubtitle = document.getElementById('page-subtitle');
+            
+            if (tabName === 'main') {
+                pageTitle.innerText = "Halaman Utama";
+                pageSubtitle.innerText = "SDG 7: Solusi Transisi Energi Bersih Terjangkau";
+                updateStatusUI();
+            } else {
+                pageTitle.innerText = "HPA Lab (Auto-scaling)";
+                pageSubtitle.innerText = "Simulasi Horizontal Pod Autoscaler Kubernetes Secara Real-time";
+                updateStatusUI();
+            }
+            
+            activeTab = tabName;
+        }
+
+        // Status Indicator UI helper
+        function updateStatusUI() {
+            const dot = document.getElementById('header-status-dot');
+            const label = document.getElementById('system-status');
+            
+            if (activeTab === 'main') {
+                dot.className = "status-dot active";
+                label.innerText = "Sistem Normal";
+                label.style.color = "var(--text-main)";
+                return;
+            }
+
+            // HPA Tab UI specific
+            if (useBackend) {
+                if (hpaState.isLoadSimulated) {
+                    dot.className = "status-dot simulating";
+                    label.innerText = "Beban Tinggi (Cloud Server)";
+                    label.style.color = "var(--color-warning)";
+                } else {
+                    dot.className = "status-dot active";
+                    label.innerText = "Normal (Cloud Server)";
+                    label.style.color = "var(--color-neon-green)";
+                }
+            } else {
+                if (hpaState.isLoadSimulated) {
+                    dot.className = "status-dot simulating";
+                    label.innerText = "Beban Tinggi (Simulasi Lokal)";
+                    label.style.color = "var(--color-warning)";
+                } else {
+                    dot.className = "status-dot active";
+                    label.innerText = "Normal (Simulasi Lokal)";
+                    label.style.color = "var(--color-neon-green)";
+                }
+            }
+        }
+
+        // ==========================================
+        // TAB 1: SOLAR CALCULATION ENGINE
+        // ==========================================
+        const inputBill = document.getElementById('input-bill');
+        const inputCapacity = document.getElementById('input-capacity');
+        const inputSun = document.getElementById('input-sun');
+        const inputOffset = document.getElementById('input-offset');
+
+        const previewBill = document.getElementById('preview-bill');
+        const previewSun = document.getElementById('preview-sun');
+        const previewOffset = document.getElementById('preview-offset');
+
+        const calcCapacity = document.getElementById('calc-capacity');
+        const calcGeneration = document.getElementById('calc-generation');
+        const calcSavings = document.getElementById('calc-savings');
+        const calcCost = document.getElementById('calc-cost');
+        const calcPayback = document.getElementById('calc-payback');
+        const calcCo2 = document.getElementById('calc-co2');
+        const calcTrees = document.getElementById('calc-trees');
+
+        // Rp 1500 per kWh as average residential non-subsidy tariff in IDR
+        const TARIFF_PER_KWH = 1500;
+
+        function formatIDR(value) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function calculateSolarSavings() {
+            const bill = parseInt(inputBill.value);
+            const maxCapacityVA = parseInt(inputCapacity.value);
+            const sunHours = parseFloat(inputSun.value);
+            const offsetPercentage = parseInt(inputOffset.value) / 100;
+
+            // 1. Convert monthly bill to monthly kWh consumption
+            const monthlyKwh = bill / TARIFF_PER_KWH;
+
+            // 2. Solar generation offset target (kWh per month)
+            const targetMonthlyGen = monthlyKwh * offsetPercentage;
+            
+            // 3. Daily generation target (kWh per day)
+            const targetDailyGen = targetMonthlyGen / 30;
+
+            // 4. Calculate peak solar capacity (kWp)
+            // DailyGen = Capacity (kWp) * Sunny Hours * System Efficiency (typical is 0.75 in tropical region)
+            const SYSTEM_EFFICIENCY = 0.75;
+            let solarCapacitykWp = targetDailyGen / (sunHours * SYSTEM_EFFICIENCY);
+
+            // Constraint: Solar capacity should not exceed home's VA power limit in kW equivalent
+            const maxAllowedkWp = maxCapacityVA / 1000;
+            if (solarCapacitykWp > maxAllowedkWp) {
+                solarCapacitykWp = maxAllowedkWp;
+            }
+
+            if (solarCapacitykWp < 0.25) solarCapacitykWp = 0.25;
+
+            // 5. Actual monthly generation output based on limited capacity
+            const actualMonthlyGen = solarCapacitykWp * sunHours * SYSTEM_EFFICIENCY * 30;
+
+            // 6. Calculate monthly savings (Rp)
+            const monthlySavings = actualMonthlyGen * TARIFF_PER_KWH;
+
+            // 7. Estimasi biaya investasi kasar (Rp)
+            const COST_PER_KWP = 14500000;
+            const totalInvestmentCost = solarCapacitykWp * COST_PER_KWP;
+
+            // 8. Payback Period (years)
+            const paybackYears = monthlySavings > 0 ? (totalInvestmentCost / (monthlySavings * 12)) : 0;
+
+            // 9. Environmental impact:
+            const co2OffsetPerYear = actualMonthlyGen * 12 * 0.84;
+            const equivalentTrees = co2OffsetPerYear / 22;
+
+            // UPDATE UI ELEMENTS
+            previewBill.innerText = formatIDR(bill);
+            previewSun.innerText = `${sunHours.toFixed(1)} Jam/Hari`;
+            previewOffset.innerText = `${inputOffset.value}%`;
+
+            calcCapacity.innerText = `${solarCapacitykWp.toFixed(2)} kWp`;
+            calcGeneration.innerText = `${Math.round(actualMonthlyGen)} kWh`;
+            calcSavings.innerText = `${formatIDR(monthlySavings)} / bln (${Math.round((monthlySavings/bill)*100)}%)`;
+            calcCost.innerText = formatIDR(totalInvestmentCost);
+            calcPayback.innerText = `${paybackYears.toFixed(1)} Tahun`;
+            
+            calcCo2.innerText = `${Math.round(co2OffsetPerYear).toLocaleString('id-ID')} kg CO₂`;
+            calcTrees.innerText = `${Math.round(equivalentTrees)} Pohon`;
+
+            // Cache current calculation result for database saving
+            lastCalculationResult = {
+                monthly_bill: bill,
+                house_capacity: maxCapacityVA,
+                sun_hours: sunHours,
+                offset_percentage: parseInt(inputOffset.value),
+                solar_capacity: parseFloat(solarCapacitykWp.toFixed(2)),
+                monthly_generation: Math.round(actualMonthlyGen),
+                monthly_savings: Math.round(monthlySavings),
+                investment_cost: Math.round(totalInvestmentCost),
+                payback_period: parseFloat(paybackYears.toFixed(1)),
+                co2_offset: Math.round(co2OffsetPerYear),
+                trees_planted: Math.round(equivalentTrees)
+            };
+        }
+
+        // Add event listeners to Tab 1 inputs
+        inputBill.addEventListener('input', calculateSolarSavings);
+        inputCapacity.addEventListener('change', calculateSolarSavings);
+        inputSun.addEventListener('input', calculateSolarSavings);
+        inputOffset.addEventListener('input', calculateSolarSavings);
+
+        // Initial Calculation Run
+        calculateSolarSavings();
+
+        // ==========================================
+        // DATABASE INTEGRATION & RIWAYAT PERHITUNGAN
+        // ==========================================
+        const btnSaveCalc = document.getElementById('btn-save-calc');
+        const dbSourceBadge = document.getElementById('db-source-badge');
+        const historyTableBody = document.getElementById('history-table-body');
+
+        btnSaveCalc.addEventListener('click', saveCalculation);
+
+        async function saveCalculation() {
+            if (!lastCalculationResult) return;
+            
+            btnSaveCalc.disabled = true;
+            const originalText = btnSaveCalc.innerHTML;
+            btnSaveCalc.innerHTML = `
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; animation: spin 1s infinite linear;">
+                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm-6 8c0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3c-3.31 0-6-2.69-6-6z"/>
+                </svg>
+                <span>Menyimpan...</span>
+            `;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/calculations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(lastCalculationResult)
+                });
+                
+                const data = await response.json();
+                showFloatingAlert(data.message || "Perhitungan disimpan!");
+                await loadCalculationHistory();
+                
+            } catch (err) {
+                console.error("Gagal menyimpan ke DB backend, beralih ke cache RAM lokal.", err);
+                
+                // Local memory cache fallback
+                if (!window.localHistoryCache) window.localHistoryCache = [];
+                const mockItem = {
+                    id: Date.now(),
+                    ...lastCalculationResult,
+                    created_at: new Date().toISOString()
+                };
+                window.localHistoryCache.unshift(mockItem);
+                
+                showFloatingAlert("Perhitungan disimpan ke RAM Cache (Backend Offline)");
+                renderHistoryDOM(window.localHistoryCache, "RAM Cache");
+            } finally {
+                btnSaveCalc.disabled = false;
+                btnSaveCalc.innerHTML = originalText;
+            }
+        }
+
+        async function loadCalculationHistory() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/calculations`);
+                if (!response.ok) throw new Error("Gagal mengambil data");
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    renderHistoryDOM(data.data, data.source || "MySQL DB");
+                }
+            } catch (err) {
+                console.warn("Gagal mengambil riwayat dari backend, menggunakan RAM Cache.");
+                if (window.localHistoryCache) {
+                    renderHistoryDOM(window.localHistoryCache, "RAM Cache");
+                }
+            }
+        }
+
+        function renderHistoryDOM(items, sourceName) {
+            dbSourceBadge.innerText = sourceName;
+            dbSourceBadge.style.color = sourceName.includes("MySQL") ? "var(--color-primary)" : "var(--color-solar)";
+            
+            if (!items || items.length === 0) {
+                historyTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Belum ada riwayat perhitungan. Masukkan data di atas dan klik Simpan.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            historyTableBody.innerHTML = '';
+            items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.04)';
+                tr.style.transition = 'var(--transition-smooth)';
+                
+                // Add hover style dynamically
+                tr.onmouseover = () => tr.style.backgroundColor = 'rgba(255, 255, 255, 0.01)';
+                tr.onmouseout = () => tr.style.backgroundColor = 'transparent';
+
+                const date = new Date(item.created_at).toLocaleDateString('id-ID', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                });
+
+                tr.innerHTML = `
+                    <td style="padding: 0.75rem 1rem; color: var(--text-muted);">${date}</td>
+                    <td style="padding: 0.75rem 1rem; font-weight: 500;">${formatIDR(item.monthly_bill)}</td>
+                    <td style="padding: 0.75rem 1rem;">${item.house_capacity} VA</td>
+                    <td style="padding: 0.75rem 1rem; color: var(--color-solar); font-weight: 600;">${parseFloat(item.solar_capacity).toFixed(2)} kWp</td>
+                    <td style="padding: 0.75rem 1rem;">${item.monthly_generation} kWh</td>
+                    <td style="padding: 0.75rem 1rem; color: var(--color-primary); font-weight: 600;">${formatIDR(item.monthly_savings)}</td>
+                    <td style="padding: 0.75rem 1rem; font-weight: 500;">${parseFloat(item.payback_period).toFixed(1)} Thn</td>
+                `;
+                
+                historyTableBody.appendChild(tr);
+            });
+        }
+
+        // Floating alerts for dashboard popups
+        function showFloatingAlert(message) {
+            // Remove existing alert if any
+            const existingAlert = document.getElementById('floating-alert-toast');
+            if (existingAlert) existingAlert.remove();
+
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'floating-alert-toast';
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.bottom = '2rem';
+            alertDiv.style.right = '2rem';
+            alertDiv.style.background = 'var(--bg-surface-elevated)';
+            alertDiv.style.border = '1px solid var(--color-primary)';
+            alertDiv.style.borderRadius = '10px';
+            alertDiv.style.padding = '1rem 1.5rem';
+            alertDiv.style.color = 'var(--text-main)';
+            alertDiv.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 10px var(--color-primary-glow)';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.fontSize = '0.9rem';
+            alertDiv.style.display = 'flex';
+            alertDiv.style.alignItems = 'center';
+            alertDiv.style.gap = '0.5rem';
+            alertDiv.style.animation = 'fadeIn 0.3s ease-out forwards';
+            
+            alertDiv.innerHTML = `
+                <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:var(--color-primary)">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>${message}</span>
+            `;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.style.animation = 'fadeIn 0.3s ease-out reverse forwards';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        // ==========================================
+        // TAB 2: HPA LAB (AUTO-SCALING & GRAPH SIM)
+        // ==========================================
+        
+        // HPA Engine State Management (Frontend standalone copy/mock)
+        const hpaState = {
+            isLoadSimulated: false,
+            currentPods: 2,
+            targetPods: 2,
+            minPods: 2,
+            maxPods: 5,
+            
+            podsList: [
+                { id: 'solarcalc-hpa-7f89b-p1', status: 'Running', cpu: 15 },
+                { id: 'solarcalc-hpa-7f89b-p2', status: 'Running', cpu: 18 }
+            ],
+            
+            traffic: 120, // req/s
+            latency: 42,  // ms
+            baseCpu: 15,  // % average CPU of active pods
+            cycleCount: 0
+        };
+
+        const btnToggleLoad = document.getElementById('btn-toggle-load');
+        const btnLoadText = document.getElementById('btn-load-text');
+        const podCountEl = document.getElementById('pod-count');
+        const hpaBadge = document.getElementById('hpa-badge');
+        const podDetailEl = document.getElementById('pod-detail');
+        const podTrackerContainer = document.getElementById('pod-tracker-container');
+        
+        const valThroughput = document.getElementById('val-throughput');
+        const valLatency = document.getElementById('val-latency');
+
+        const hpaInfoLabel = document.getElementById('hpa-info-label');
+        const podNamespaceEl = document.getElementById('pod-namespace');
+
+        // Handle load simulation button click
+        btnToggleLoad.addEventListener('click', async () => {
+            const targetState = !hpaState.isLoadSimulated;
+            
+            if (useBackend) {
+                // SINKRONISASI DENGAN BACKEND
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/simulate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ simulate: targetState })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        hpaState.isLoadSimulated = data.isLoadSimulated;
+                        hpaState.targetPods = data.targetPods;
+                        updateLoadButtonDOM();
+                        updateStatusUI();
+                    }
+                } catch (err) {
+                    console.error("Gagal mengirim simulasi ke backend, kembali ke offline mode.", err);
+                    useBackend = false;
+                    fallbackToOfflineSimulation(targetState);
+                }
+            } else {
+                // RUN OFFLINE SIMULATION ONLY
+                fallbackToOfflineSimulation(targetState);
+            }
+        });
+
+        function fallbackToOfflineSimulation(targetState) {
+            hpaState.isLoadSimulated = targetState;
+            hpaState.targetPods = hpaState.isLoadSimulated ? hpaState.maxPods : hpaState.minPods;
+            updateLoadButtonDOM();
+            updateStatusUI();
+        }
+
+        function updateLoadButtonDOM() {
+            if (hpaState.isLoadSimulated) {
+                btnToggleLoad.classList.add('active');
+                btnLoadText.innerText = "Hentikan Simulasi";
+            } else {
+                btnToggleLoad.classList.remove('active');
+                btnLoadText.innerText = "Simulasikan Load";
+            }
+        }
+
+        // Generate dynamic suffixes
+        function generateRandomSuffix() {
+            return Math.random().toString(36).substring(2, 6);
+        }
+
+        // Pure JS offline simulation runner (only runs if useBackend === false)
+        function offlineHpaLoop() {
+            hpaState.cycleCount++;
+            
+            if (hpaState.isLoadSimulated) {
+                hpaState.traffic = Math.floor(820 + Math.random() * 200);
+                
+                const activeRunningPods = hpaState.podsList.filter(p => p.status === 'Running').length;
+                if (activeRunningPods > 0) {
+                    hpaState.baseCpu = Math.min(95, Math.round(180 / activeRunningPods));
+                } else {
+                    hpaState.baseCpu = 95;
+                }
+                
+                const processingDeficit = Math.max(0, 5 - activeRunningPods);
+                hpaState.latency = Math.round(45 + (processingDeficit * 45) + (Math.random() * 15));
+            } else {
+                hpaState.traffic = Math.floor(95 + Math.random() * 40);
+                hpaState.baseCpu = Math.floor(10 + Math.random() * 8);
+                hpaState.latency = Math.floor(32 + Math.random() * 10);
+            }
+
+            // Sync pod CPUs
+            hpaState.podsList.forEach(pod => {
+                if (pod.status === 'Running') {
+                    pod.cpu = Math.min(99, Math.max(5, Math.round(hpaState.baseCpu + (Math.random() * 8 - 4))));
+                } else if (pod.status === 'Pending') {
+                    pod.cpu = 0;
+                }
+            });
+
+            // Pod autoscaling steps
+            if (hpaState.podsList.length < hpaState.targetPods) {
+                hpaBadge.className = "hpa-status-badge scaling";
+                hpaBadge.innerText = "Scaling Up";
+                
+                const newPodId = `solarcalc-hpa-local-${generateRandomSuffix()}`;
+                hpaState.podsList.push({
+                    id: newPodId,
+                    status: 'Pending',
+                    cpu: 0
+                });
+                
+                setTimeout(() => {
+                    const spawned = hpaState.podsList.find(p => p.id === newPodId);
+                    if (spawned) {
+                        spawned.status = 'Running';
+                        renderPodsDOM();
+                    }
+                }, 1200);
+
+            } else if (hpaState.podsList.length > hpaState.targetPods) {
+                hpaBadge.className = "hpa-status-badge scaling";
+                hpaBadge.innerText = "Scaling Down";
+                
+                const activePods = hpaState.podsList.filter(p => p.status !== 'Terminating');
+                if (activePods.length > 0) {
+                    const podToTerminate = activePods[activePods.length - 1];
+                    podToTerminate.status = 'Terminating';
+                    podToTerminate.cpu = 0;
+                    
+                    const targetId = podToTerminate.id;
+                    const domElement = document.getElementById(targetId);
+                    if (domElement) domElement.classList.add('terminating');
+                    
+                    setTimeout(() => {
+                        hpaState.podsList = hpaState.podsList.filter(p => p.id !== targetId);
+                        renderPodsDOM();
+                    }, 500);
+                }
+            } else {
+                // Static stabilized
+                if (hpaState.isLoadSimulated) {
+                    hpaBadge.className = "hpa-status-badge";
+                    hpaBadge.innerText = "Healthy Under Load";
+                    hpaBadge.style.borderColor = "var(--color-warning)";
+                    hpaBadge.style.color = "var(--color-warning)";
+                    hpaBadge.style.background = "rgba(245, 158, 11, 0.1)";
+                } else {
+                    hpaBadge.className = "hpa-status-badge";
+                    hpaBadge.innerText = "Idle";
+                    hpaBadge.style.borderColor = "var(--color-neon-green)";
+                    hpaBadge.style.color = "var(--color-neon-green)";
+                    hpaBadge.style.background = "rgba(57, 255, 20, 0.1)";
+                }
+            }
+
+            const totalActivePods = hpaState.podsList.filter(p => p.status === 'Running').length;
+            hpaState.currentPods = hpaState.podsList.length;
+            
+            podCountEl.innerText = hpaState.currentPods;
+            podDetailEl.innerText = `${totalActivePods} Pod Sehat / Target ${hpaState.targetPods}`;
+
+            valThroughput.innerText = `${hpaState.traffic} req/s`;
+            valLatency.innerText = `${hpaState.latency} ms`;
+
+            renderPodsDOM();
+            pushMetricData(hpaState.traffic, hpaState.latency);
+        }
+
+        // Render pods visual block cards
+        function renderPodsDOM() {
+            podTrackerContainer.innerHTML = '';
+            
+            hpaState.podsList.forEach(pod => {
+                const podDiv = document.createElement('div');
+                podDiv.className = 'pod-item';
+                podDiv.id = pod.id;
+                
+                let cpuClass = '';
+                if (pod.cpu > 80) cpuClass = 'danger';
+                else if (pod.cpu > 55) cpuClass = 'warning';
+                
+                const dotStatus = pod.status.toLowerCase();
+
+                podDiv.innerHTML = `
+                    <div class="pod-header">
+                        <span class="pod-name">${pod.id.split('-').pop()}</span>
+                        <div class="pod-status-dot ${dotStatus}"></div>
+                    </div>
+                    <div class="pod-cpu">
+                        <div class="pod-cpu-lbl">
+                            <span>CPU</span>
+                            <span>${pod.status === 'Running' ? pod.cpu + '%' : pod.status}</span>
+                        </div>
+                        <div class="pod-cpu-bar-bg">
+                            <div class="pod-cpu-bar-fill ${cpuClass}" style="width: ${pod.status === 'Running' ? pod.cpu : 0}%"></div>
+                        </div>
+                    </div>
+                `;
+                
+                podTrackerContainer.appendChild(podDiv);
+            });
+        }
+
+        // Backend Sync Loop
+        async function syncWithBackend() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/status`);
+                if (!response.ok) throw new Error("Koneksi gagal");
+                
+                const data = await response.json();
+                
+                // Switch mode to backend
+                if (!useBackend) {
+                    useBackend = true;
+                    hpaInfoLabel.innerHTML = `
+                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; display: inline; vertical-align: middle; margin-right: 4px; fill: var(--color-primary);">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        <strong>Terkoneksi ke Backend!</strong> Data HPA disinkronkan secara real-time dari server Node.js.
+                    `;
+                    hpaInfoLabel.style.color = "var(--color-primary)";
+                    podNamespaceEl.innerText = "ns: default-cloud";
+                    updateStatusUI();
+                }
+
+                // Sync frontend state representation
+                hpaState.isLoadSimulated = data.isLoadSimulated;
+                hpaState.targetPods = data.targetPods;
+                hpaState.currentPods = data.currentPods;
+                hpaState.podsList = data.podsList;
+                hpaState.traffic = data.traffic;
+                hpaState.latency = data.latency;
+                hpaState.baseCpu = data.baseCpu;
+                
+                // Update DOMs
+                updateLoadButtonDOM();
+                
+                const totalActivePods = data.activeRunningCount || hpaState.podsList.filter(p => p.status === 'Running').length;
+                podCountEl.innerText = hpaState.currentPods;
+                podDetailEl.innerText = `${totalActivePods} Pod Sehat / Target ${hpaState.targetPods}`;
+                
+                // Render autoscale state tag
+                if (hpaState.isLoadSimulated) {
+                    const isStabilized = (hpaState.currentPods === hpaState.targetPods) && (hpaState.podsList.every(p => p.status === 'Running'));
+                    if (isStabilized) {
+                        hpaBadge.className = "hpa-status-badge";
+                        hpaBadge.innerText = "Healthy Under Load";
+                        hpaBadge.style.borderColor = "var(--color-warning)";
+                        hpaBadge.style.color = "var(--color-warning)";
+                        hpaBadge.style.background = "rgba(245, 158, 11, 0.1)";
+                    } else {
+                        hpaBadge.className = "hpa-status-badge scaling";
+                        hpaBadge.innerText = "Scaling Up";
+                    }
+                } else {
+                    const isStabilized = (hpaState.currentPods === hpaState.targetPods);
+                    if (isStabilized) {
+                        hpaBadge.className = "hpa-status-badge";
+                        hpaBadge.innerText = "Idle";
+                        hpaBadge.style.borderColor = "var(--color-neon-green)";
+                        hpaBadge.style.color = "var(--color-neon-green)";
+                        hpaBadge.style.background = "rgba(57, 255, 20, 0.1)";
+                    } else {
+                        hpaBadge.className = "hpa-status-badge scaling";
+                        hpaBadge.innerText = "Scaling Down";
+                    }
+                }
+
+                valThroughput.innerText = `${hpaState.traffic} req/s`;
+                valLatency.innerText = `${hpaState.latency} ms`;
+
+                renderPodsDOM();
+                pushMetricData(hpaState.traffic, hpaState.latency);
+                updateStatusUI();
+
+            } catch (err) {
+                // If it was connected, drop back to local
+                if (useBackend) {
+                    useBackend = false;
+                    hpaInfoLabel.innerHTML = `
+                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; display: inline; vertical-align: middle; margin-right: 4px; fill: var(--color-danger);">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <strong>Backend Terputus!</strong> Beralih ke simulasi offline lokal. Jalankan backend/server.js untuk menghubungkan kembali.
+                    `;
+                    hpaInfoLabel.style.color = "var(--color-danger)";
+                    podNamespaceEl.innerText = "ns: default-local";
+                    updateStatusUI();
+                }
+                
+                // Run offline loop cycle
+                offlineHpaLoop();
+            }
+        }
+
+        // Main scheduler loop (every 1.5 seconds)
+        function masterHpaLoop() {
+            // If backend is active (or we're checking its presence), run sync.
+            // If offline, syncWithBackend will catch the error and run offlineHpaLoop automatically.
+            syncWithBackend();
+        }
+
+        // Run checking/syncing every 1.5 seconds
+        setInterval(masterHpaLoop, 1500);
+
+
+        // ==========================================
+        // DYNAMIC SMOOTH ROLLING TIMELINE CHARTS
+        // ==========================================
+        const MAX_HISTORY = 40;
+        const throughputHistory = Array(MAX_HISTORY).fill(120);
+        const latencyHistory = Array(MAX_HISTORY).fill(42);
+
+        function pushMetricData(trafficVal, latencyVal) {
+            throughputHistory.push(trafficVal);
+            latencyHistory.push(latencyVal);
+            
+            if (throughputHistory.length > MAX_HISTORY) throughputHistory.shift();
+            if (latencyHistory.length > MAX_HISTORY) latencyHistory.shift();
+        }
+
+        const canvasT = document.getElementById('chart-throughput');
+        const canvasL = document.getElementById('chart-latency');
+        const ctxT = canvasT.getContext('2d');
+        const ctxL = canvasL.getContext('2d');
+
+        function resizeCanvas(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+        }
+
+        function drawRollingChart(ctx, canvas, history, maxExpectedVal, neonColor, glowColor) {
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.clearRect(0, 0, w, h);
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            
+            const displayW = w / dpr;
+            const displayH = h / dpr;
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+            
+            const gridSpacingX = displayW / 6;
+            for (let i = 0; i <= 6; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * gridSpacingX, 0);
+                ctx.lineTo(i * gridSpacingX, displayH);
+                ctx.stroke();
+            }
+            
+            const gridSpacingY = displayH / 4;
+            for (let i = 0; i <= 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * gridSpacingY);
+                ctx.lineTo(displayW, i * gridSpacingY);
+                ctx.stroke();
+            }
+
+            const pointsCount = history.length;
+            const stepX = displayW / (MAX_HISTORY - 1);
+            
+            ctx.beginPath();
+            
+            for (let i = 0; i < pointsCount; i++) {
+                const val = history[i];
+                const percentVal = Math.min(0.95, Math.max(0.05, val / maxExpectedVal));
+                const x = i * stepX;
+                const y = displayH - (percentVal * displayH);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.strokeStyle = neonColor;
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0; 
+            ctx.lineTo( (pointsCount - 1) * stepX, displayH);
+            ctx.lineTo(0, displayH);
+            ctx.closePath();
+            
+            const areaGrd = ctx.createLinearGradient(0, 0, 0, displayH);
+            areaGrd.addColorStop(0, glowColor.replace('0.4', '0.15'));
+            areaGrd.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = areaGrd;
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function renderChartsLoop() {
+            resizeCanvas(canvasT);
+            resizeCanvas(canvasL);
+            
+            drawRollingChart(ctxT, canvasT, throughputHistory, 1300, '#00F0FF', 'rgba(0, 240, 255, 0.4)');
+            drawRollingChart(ctxL, canvasL, latencyHistory, 300, '#39FF14', 'rgba(57, 255, 20, 0.4)');
+            
+            requestAnimationFrame(renderChartsLoop);
+        }
+
+        // Initialize state
+        renderPodsDOM();
+        
+        // Let UI stabilize then run chart paint loop
+        setTimeout(() => {
+            renderChartsLoop();
+        }, 150);
+
+        // Pre-run first connection check
+        syncWithBackend();
+        loadCalculationHistory();
+
+    </script>
+</body>
+</html>
