@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: solarcalc-frontend
+  namespace: solarcalc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: solarcalc-frontend
+  template:
+    metadata:
+      labels:
+        app: solarcalc-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: 446598504794.dkr.ecr.us-east-1.amazonaws.com/solarcalc-frontend:v1
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 10m
+          limits:
+            cpu: 20m

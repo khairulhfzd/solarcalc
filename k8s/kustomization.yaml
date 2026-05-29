@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - 00-namespace.yaml
+  - 01-frontend-deployment.yaml
+  - 02-frontend-service.yaml
+  - 03-frontend-hpa.yaml
+  - 04-mysql-secret.yaml
+  - 05-mysql-pvc.yaml
+  - 06-mysql-deployment.yaml
+  - 07-backend-deployment.yaml

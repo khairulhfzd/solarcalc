@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: solarcalc-backend
+  namespace: solarcalc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: solarcalc-backend
+  template:
+    metadata:
+      labels:
+        app: solarcalc-backend
+    spec:
+      containers:
+      - name: backend
+        image: 446598504794.dkr.ecr.us-east-1.amazonaws.com/solarcalc-backend:v1
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PORT
+          value: "5000"
+        - name: DB_HOST
+          value: "mysql-db-svc"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-root-password
+        - name: DB_NAME
+          value: "solarcalc"
+        - name: DB_PORT
+          value: "3306"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 100m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: solarcalc-backend-svc
+  namespace: solarcalc
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: solarcalc-backend
